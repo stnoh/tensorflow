@@ -38,6 +38,36 @@ import subprocess
 import sys
 import tempfile
 
+# !!!!!!!!!!!!!!!!!!!!!
+# QUICK FIX for Python2
+import six  
+
+if six.PY2:
+  class _ReadableWrapper(object):
+    def __init__(self, raw):
+        self._raw = raw
+
+    def readable(self):
+        return True
+
+    def writable(self):
+        return False
+
+    def seekable(self):
+        return True
+
+    def __getattr__(self, name):
+        return getattr(self._raw, name)
+
+def wrap_text(stream, *args, **kwargs):
+  # Note: order important here, as 'file' doesn't exist in Python 3
+  if six.PY2 and isinstance(stream, file):
+      stream = io.BufferedReader(_ReadableWrapper(stream))
+
+  return io.TextIOWrapper(stream)
+# QUICK FIX for Python2
+# !!!!!!!!!!!!!!!!!!!!!
+
 # External tools we use that come with visual studio sdk
 UNDNAME = "%{undname_bin_path}"
 
@@ -127,7 +157,8 @@ def main():
     # We compare on undname but use the decorated name from candidates.
     dupes = 0
     proc = subprocess.Popen([UNDNAME, tmpfile.name], stdout=subprocess.PIPE)
-    for idx, line in enumerate(io.TextIOWrapper(proc.stdout, encoding="utf-8")):
+    #for idx, line in enumerate(io.TextIOWrapper(proc.stdout, encoding="utf-8")):
+    for idx, line in enumerate(wrap_text(proc.stdout, encoding="utf-8")): # QUICK FIX for Python2
       decorated = candidates[idx]
       if decorated in taken:
         # Symbol is already in output, done.

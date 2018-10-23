@@ -76,7 +76,14 @@ def gather_memory_info():
 def gather_cpu_info():
   """Gather CPU Information.  Assumes all CPUs are the same."""
   cpu_info = test_log_pb2.CPUInfo()
-  cpu_info.num_cores = multiprocessing.cpu_count()
+  #cpu_info.num_cores = multiprocessing.cpu_count()
+
+  # Quick fix for "NotImplementedError" in Python2/Windows
+  try:
+    cpu_count = multiprocessing.cpu_count()
+  except NotImplementedError:
+    cpu_count = 1
+  cpu_info.num_cores = cpu_count
 
   # Gather num_cores_allowed
   try:
